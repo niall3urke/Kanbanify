@@ -1,0 +1,50 @@
+﻿<div class="calendar">
+    @if (ShowHeader)
+    {
+        <div class="calendar-header">
+            <p class="subtitle has-text-white">@headerYear</p>
+            <p class="title has-text-white">@headerDate</p>
+        </div>
+    }
+    <div id="calendar-nav">
+        <a @onclick="PrevMonth" class="button is-white is-rounded">
+            <span class="icon">
+                <i class="fa fa-angle-left"></i>
+            </span>
+        </a>
+
+        <div class="level-item">
+            <p class="title is-5">@headerMonth</p>
+        </div>
+
+        <a @onclick="NextMonth" class="button is-white is-rounded">
+            <span class="icon">
+                <i class="fa fa-angle-right"></i>
+            </span>
+        </a>
+    </div>
+    <div class="days-header has-text-grey">
+        <span>Sa</span>
+        <span>Su</span>
+        <span>Mo</span>
+        <span>Tu</span>
+        <span>We</span>
+        <span>Th</span>
+        <span>Fr</span>
+    </div>
+    <div class="calendar-days">
+        @foreach (var day in days)
+        {
+            @if (day.IsActive)
+            {
+                <a @onclick="@(() => DayClicked(day))" class="button is-rounded is-small @day.ButtonType">
+                    @day.Number
+                </a>
+            }
+            else
+            {
+                <span></span>
+            }
+        }
+    </div>
+</div>

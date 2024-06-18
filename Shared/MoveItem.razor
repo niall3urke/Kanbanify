@@ -1,0 +1,152 @@
+﻿@inject ModalService Modal
+@inject DatabaseOperations db
+
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">Move Item</p>
+        <button @onclick="Cancel" class="delete" aria-label="close"></button>
+    </header>
+
+    <section class="modal-card-body" style="min-height: 400px;">
+        <div class="field">
+            <label class="label">Stage</label>
+            <div class="control">
+                <div class="dropdown is-hoverable">
+                    <div class="dropdown-trigger">
+                        <button class="button is-light" aria-haspopup="true">
+                            <span>@stageName</span>
+                            <span class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </span>
+                        </button>
+                    </div>
+                    <div class="dropdown-menu" role="menu">
+                        <div class="dropdown-content">
+                            @foreach(var stage in ViewModel.StageModels)
+                            {
+                                string name = stage.Name;
+                                if (stage.Id == ItemModel.StageId)
+                                {
+                                    name += " (current)";
+                                }
+                                <a @onclick="() => SetItems(stage)" class="dropdown-item">
+                                    @name
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Position</label>
+            <div class="control">
+                <div class="control">
+                    <div class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button is-light" aria-haspopup="true">
+                                <span>@positionName</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" role="menu">
+                            <div class="dropdown-content">
+                                @for (int i = 0; i < ItemModels.Count; i++)
+                                {
+                                    string currentPosition = $"Position {i + 1}";
+                                    var item = ItemModels[i];
+
+                                    if (ItemModels[i] == ItemModel)
+                                    {
+                                        currentPosition += " (current)";
+                                    }
+                                    <a @onclick="() => SetPosition(item)" class="dropdown-item">
+                                        @currentPosition
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="modal-card-foot is-right">
+        <div class="field is-grouped">
+            <p class="control">
+                <button @onclick="Cancel" class="button">Cancel</button>
+            </p>
+            <p class="control">
+                <button @onclick="Save" class="button is-link">Save</button>
+            </p>
+        </div>
+    </footer>
+
+</div>
+
+@code {
+
+    // Cascades
+
+    [CascadingParameter]
+    ModalParameters Parameters { get; set; }
+
+    private IProjectViewModel ViewModel;
+    private List<ItemModel> ItemModels;
+
+    private string positionName;
+    private string stageName;
+
+    private ItemModel ItemModel;
+    private int itemPosition;
+    private Guid stageId;
+
+    // Events
+
+    protected override void OnInitialized()
+    {
+        ItemModels = new List<ItemModel>();
+        ItemModel = new ItemModel();
+
+        if (Parameters.TryGet("Model", out ItemModel model))
+        {
+            ItemModel = model;
+        }
+
+        if (Parameters.TryGet("Project", out IProjectViewModel viewModel))
+        {
+            ViewModel = viewModel;
+        }
+    }
+
+    void SetItems(StageModel stage)
+    {
+        stageName = stage.Name;
+        stageId = stage.Id;
+
+        ItemModels = ViewModel.ItemModels
+            .Where(x => x.StageId == stage.Id).ToList();
+    }
+
+    void SetPosition(ItemModel item)
+    {
+        itemPosition = ItemModels.IndexOf(item);
+        positionName = $"Position {itemPosition + 1}";
+    }
+
+    void Save()
+    {
+        ViewModel.MoveItem(ItemModel, stageId, itemPosition);
+        Modal.Close(ModalResult.OK<ItemModel>(ItemModel));
+    }
+
+    void Cancel()
+    {
+        Modal.Close(ModalResult.Cancel());
+    }
+
+}

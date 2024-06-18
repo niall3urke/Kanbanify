@@ -1,0 +1,105 @@
+﻿@inject ModalService Modal
+@inject DatabaseOperations db
+
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">Move Stage</p>
+        <button @onclick="Cancel" class="delete" aria-label="close"></button>
+    </header>
+
+    <section class="modal-card-body" style="min-height: 400px;">
+        <div class="field">
+            <label class="label">Position</label>
+            <div class="control">
+                <div class="control">
+                    <div class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button is-light" aria-haspopup="true">
+                                <span>@name</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" role="menu">
+                            <div class="dropdown-content">
+                                @for (int i = 0; i < ViewModel.StageModels.Count; i++)
+                                {
+                                    string currentPosition = $"Position {i + 1}";
+                                    var item = ViewModel.StageModels[i];
+
+                                    if (ViewModel.StageModels[i] == StageModel)
+                                    {
+                                        currentPosition += " (current)";
+                                    }
+                                    <a @onclick="() => SetPosition(item)" class="dropdown-item">
+                                        @currentPosition
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="modal-card-foot is-right">
+        <div class="field is-grouped">
+            <p class="control">
+                <button @onclick="Cancel" class="button">Cancel</button>
+            </p>
+            <p class="control">
+                <button @onclick="Save" class="button is-link">Save</button>
+            </p>
+        </div>
+    </footer>
+
+</div>
+
+
+@code {
+     // Cascades
+
+    [CascadingParameter]
+    ModalParameters Parameters { get; set; }
+
+    private IProjectViewModel ViewModel;
+    private StageModel StageModel;
+
+    private string name;
+    private int index;
+
+    // Events
+
+    protected override void OnInitialized()
+    {
+        if (Parameters.TryGet("Model", out StageModel model))
+        {
+            StageModel = model;
+        }
+
+        if (Parameters.TryGet("Project", out IProjectViewModel viewModel))
+        {
+            ViewModel = viewModel;
+        }
+    }
+
+    void SetPosition(StageModel stage)
+    {
+        index = ViewModel.StageModels.IndexOf(stage);
+        name = $"Position {index + 1}";
+    }
+
+    void Save()
+    {
+        ViewModel.MoveStage(StageModel, index);
+        Modal.Close(ModalResult.OK<StageModel>(StageModel));
+    }
+
+    void Cancel()
+    {
+        Modal.Close(ModalResult.Cancel());
+    }
+
+}

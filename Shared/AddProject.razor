@@ -1,0 +1,58 @@
+﻿@inject ModalService Modal
+@inject DatabaseOperations db
+
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">Add Project</p>
+        <button @onclick="Cancel" class="delete" aria-label="close"></button>
+    </header>
+
+    <section class="modal-card-body">
+        <div class="field">
+            <label class="label">Name</label>
+            <div class="control">
+                <input @bind="ProjectModel.Name" class="input" type="text" placeholder="Name">
+            </div>
+        </div>
+
+    </section>
+
+    <footer class="modal-card-foot is-right">
+        <div class="field is-grouped">
+            <p class="control">
+                <button @onclick="Cancel" class="button">Cancel</button>
+            </p>
+            <p class="control">
+                <button @onclick="Save" class="button is-link">Save</button>
+            </p>
+        </div>
+    </footer>
+</div>
+
+@code {
+
+    // Cascades
+
+    [CascadingParameter] ModalParameters Parameters { get; set; }
+
+    private ProjectModel ProjectModel;
+
+    // Events
+
+    protected override void OnInitialized()
+    {
+        ProjectModel = new ProjectModel();
+    }
+
+    void Save()
+    {
+        Modal.Close(ModalResult.OK<ProjectModel>(ProjectModel));
+    }
+
+    void Cancel()
+    {
+        Modal.Close(ModalResult.Cancel());
+    }
+
+
+}

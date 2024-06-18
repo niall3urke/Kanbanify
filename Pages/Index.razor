@@ -1,0 +1,77 @@
+﻿@page "/"
+@inject NavigationManager Navigation
+@inject DatabaseOperations db
+
+<section class="hero is-primary is-fullheight">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title is-1">Welcome to Kanbanify</h1>
+            <h2 class="subtitle is-3">Organize your stuff</h2>
+
+            <div class="field is-grouped">
+                <div class="control">
+                    <div class="control has-icons-left">
+                        <input @bind="name" class="input is-large" type="text" placeholder="Name">
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-user"></i>
+                        </span>
+                    </div>
+                </div>
+                <div class="control">
+                    <button @onclick="OnClickCreateAccount" class="button is-white is-large">Go to projects</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</section>
+
+@code{
+
+    // Fields
+
+    private string email;
+    private string name;
+
+    // Events
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await GetUser();
+    }
+
+    // Methods - setup
+
+    private async Task GetUser()
+    {
+        var (success, users) = await db.ReadAll<UserModel>();
+
+        if (users.Count == 0)
+            return;
+
+        Navigation.NavigateTo($"/projects/{users[0].Id}");
+    }
+
+    // Handlers
+
+    async void OnClickCreateAccount()
+    {
+        if (name is null)
+            name = "";
+
+        var user = new UserModel()
+        {
+            Name = name,
+        };
+
+        if (await db.Create(user))
+        {
+            Navigation.NavigateTo($"/projects/{user.Id}");
+        }
+    }
+
+
+}

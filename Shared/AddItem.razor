@@ -1,0 +1,410 @@
+﻿@inject ModalService Modal
+@inject DatabaseOperations db
+
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">Add Item</p>
+        <button @onclick="Cancel" class="delete" aria-label="close"></button>
+    </header>
+
+    <section class="modal-card-body">
+        <div class="field">
+            <label class="label">Title</label>
+            <div class="control">
+                <input @bind="ItemModel.Name" class="input" type="text" placeholder="Title">
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Highlight</label>
+            <div class="control">
+                <div class="buttons">
+                    @foreach (var color in colors)
+                    {
+                        if (color == selectedColor)
+                        {
+                            <button @onclick="() => OnColorClick(color)" class="button @color is-circle">
+                                <span class="has-icon">
+                                    <i class="fa fa-check"></i>
+                                </span>
+                            </button>
+                        }
+                        else
+                        {
+                            <button @onclick="() => OnColorClick(color)" class="button @color is-circle"></button>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <div>
+                            <label class="label">Frequency</label>
+                            <div class="dropdown is-hoverable">
+                                <div class="dropdown-trigger">
+                                    <button class="button is-light" aria-haspopup="true">
+                                        <span class="icon is-small">
+                                            <i class="fa fa-redo has-text-link"></i>
+                                        </span>
+                                        <span>@FrequencyText()</span>
+                                        <span class="icon is-small">
+                                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                        </span>
+                                    </button>
+                                </div>
+                                <div class="dropdown-menu" id="dropdown-menu2" role="menu">
+                                    <div class="dropdown-content">
+                                        <a @onclick="() => OnFrequencyClick(ItemFrequency.None)" class="dropdown-item">
+                                            <span class="icon is-small">
+                                                <i class="fa fa-redo has-text-grey"></i>
+                                            </span>
+                                            <span>One off</span>
+                                        </a>
+                                        <hr class="dropdown-divider">
+                                        <a @onclick="() => OnFrequencyClick(ItemFrequency.Daily)" class="dropdown-item">
+                                            <span class="icon is-small">
+                                                <i class="fa fa-redo has-text-success"></i>
+                                            </span>
+                                            <span>Daily</span>
+                                        </a>
+                                        <hr class="dropdown-divider">
+                                        <a @onclick="() => OnFrequencyClick(ItemFrequency.Weekly)" class="dropdown-item">
+                                            <span class="icon is-small">
+                                                <i class="fa fa-redo has-text-warning"></i>
+                                            </span>
+                                            <span>Weekly</span>
+                                        </a>
+                                        <hr class="dropdown-divider">
+                                        <a @onclick="() => OnFrequencyClick(ItemFrequency.Monthly)" class="dropdown-item">
+                                            <span class="icon is-small">
+                                                <i class="fa fa-redo has-text-danger"></i>
+                                            </span>
+                                            <span>Monthly</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="level-item">
+                        <div>
+                            <label class="label">Priority</label>
+                            <div class="dropdown is-hoverable">
+                                <div class="dropdown-trigger">
+                                    <button class="button is-light" aria-haspopup="true">
+                                        <span class="icon is-small">
+                                            <i class="fa fa-star has-text-link"></i>
+                                        </span>
+                                        <span>@PriorityText()</span>
+                                        <span class="icon is-small">
+                                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                        </span>
+                                    </button>
+                                </div>
+
+                                <div class="dropdown-menu" id="dropdown-menu2" role="menu">
+                                    <div class="dropdown-content">
+                                        <a @onclick="() => OnPriorityClick(ItemPriority.None)" class="dropdown-item">
+                                            <span class="icon is-small">
+                                                <i class="fa fa-star has-text-grey"></i>
+                                            </span>
+                                            <span>None</span>
+                                        </a>
+                                        <hr class="dropdown-divider">
+                                        <a @onclick="() => OnPriorityClick(ItemPriority.Low)" class="dropdown-item">
+                                            <span class="icon is-small">
+                                                <i class="fa fa-star has-text-success"></i>
+                                            </span>
+                                            <span>Low</span>
+                                        </a>
+                                        <hr class="dropdown-divider">
+                                        <a @onclick="() => OnPriorityClick(ItemPriority.Medium)" class="dropdown-item">
+                                            <span class="icon is-small">
+                                                <i class="fa fa-star has-text-warning"></i>
+                                            </span>
+                                            <span>Medium</span>
+                                        </a>
+                                        <hr class="dropdown-divider">
+                                        <a @onclick="() => OnPriorityClick(ItemPriority.High)" class="dropdown-item">
+                                            <span class="icon is-small">
+                                                <i class="fa fa-star has-text-danger"></i>
+                                            </span>
+                                            <span>High</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="level-item">
+                        <div>
+                            <label class="label">Due</label>
+                            <div class="item-duedate">
+                                <input @onchange="OnHasDueClick" type="checkbox" checked="@ItemModel.HasDueDate">
+                                <div class="dropdown @(ItemModel.HasDueDate ? "is-hoverable" : "")">
+                                    <div class="dropdown-trigger">
+                                        <button class="button is-light" aria-haspopup="true" disabled="@(!ItemModel.HasDueDate)">
+                                            <span class="icon is-small">
+                                                <i class="far fa-clock has-text-link"></i>
+                                            </span>
+                                            <span>
+                                                @DueText()
+                                            </span>
+                                            <span class="icon is-small">
+                                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    <div class="dropdown-menu" role="menu">
+                                        <div class="dropdown-content">
+                                            <Calendar ShowHeader="false" DateChanged="OnDueClick" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Description</label>
+            <div class="control">
+                <textarea @bind="ItemModel.Description" class="textarea" placeholder="Description"></textarea>
+            </div>
+        </div>
+
+        <div class="field">
+            @*<div class="level">
+                <div class="level-left">
+                    <label class="label">Tasks</label>
+                </div>
+                <div class="level-right">
+                    <button @onclick="OnHideCompletedClick" class="button is-light">Hide Completed</button>
+                </div>
+            </div>*@
+            @*<div class="control">
+                <ItemTasks ItemModel="ItemModel" HideCompletedTasks="HideCompletedTasks" />
+            </div>*@
+            <ItemTasks ItemModel="ItemModel" />
+        </div>
+
+    </section>
+
+    <footer class="modal-card-foot is-right">
+        <div class="field is-grouped">
+            <p class="control">
+                <button @onclick="Cancel" class="button">Cancel</button>
+            </p>
+            <p class="control">
+                <button @onclick="Save" class="button is-link">Save</button>
+            </p>
+        </div>
+    </footer>
+
+</div>
+
+@code {
+
+        // Cascades
+
+    [CascadingParameter] ModalParameters Parameters { get; set; }
+
+    // Fields
+
+    public bool HideCompletedTasks { get; set; }
+
+    private bool hasCompletedTasks;
+
+    private ItemModel ItemModel;
+
+    private string[] colors = new string[]
+    {
+        "", "is-primary", "is-success", "is-warning",
+        "is-danger", "is-info", "is-link",
+        "is-light", "is-dark", "is-black"
+    };
+
+    string selectedColor = "";
+
+    // Events
+
+    protected override void OnInitialized()
+    {
+        ItemModel = new ItemModel();
+
+        if (Parameters.TryGet<ItemModel>("Model", out ItemModel model))
+        {
+            ItemModel = model;
+            selectedColor = GetSelectedColor(model.BackgroundColor);
+        }
+
+        if (Parameters.TryGet<Guid>("StageId", out Guid stageId))
+        {
+            ItemModel.StageId = stageId;
+        }
+    }
+
+    protected async override Task OnAfterRenderAsync(bool first)
+    {
+        if (!first)
+            return;
+
+        hasCompletedTasks = await HasCompletedTasks(ItemModel);
+    }
+
+    // Handlers
+
+    void OnFrequencyClick(ItemFrequency frequency)
+    {
+        ItemModel.Frequency = frequency;
+    }
+
+    void OnPriorityClick(ItemPriority priority)
+    {
+        ItemModel.Priority = priority;
+    }
+
+    void OnHasDueClick(ChangeEventArgs e)
+    {
+        bool.TryParse(e.Value.ToString(), out bool hasDueDate);
+        ItemModel.HasDueDate = hasDueDate;
+
+        StateHasChanged();
+    }
+
+    void OnDueClick(DateTime dt)
+    {
+        ItemModel.DateDue = dt;
+        StateHasChanged();
+    }
+
+    void OnHideCompletedClick()
+    {
+        HideCompletedTasks = !HideCompletedTasks;
+        StateHasChanged();
+    }
+
+    void OnColorClick(string color)
+    {
+        ItemModel.BackgroundColor = GetBackgroundColor(color);
+        selectedColor = color;
+
+        StateHasChanged();
+    }
+
+    void Save()
+    {
+        Modal.Close(ModalResult.OK<ItemModel>(ItemModel));
+    }
+
+    void Cancel()
+    {
+        Modal.Close(ModalResult.Cancel());
+    }
+
+    // Methods
+
+    async Task<bool> HasCompletedTasks(ItemModel item)
+    {
+        foreach (var id in item.TaskIds)
+        {
+            var (success, task) = await db.Read<TaskModel>(id);
+
+            if (!success)
+                continue;
+
+            if (!task.IsArchived && task.IsCompleted)
+                return true;
+        }
+        return false;
+    }
+
+    string FrequencyText() => ItemModel.Frequency.ToString();
+
+    string PriorityText() => ItemModel.Priority.ToString();
+
+    string DueText() => string.Format("{0:d, MMM yy}",
+        ItemModel.DateDue);
+
+    string GetBackgroundColor(string color)
+    {
+        switch (color)
+        {
+            case "is-primary":
+                return "has-background-primary";
+
+            case "is-success":
+                return "has-background-success";
+
+            case "is-warning":
+                return "has-background-warning";
+
+            case "is-danger":
+                return "has-background-danger";
+
+            case "is-info":
+                return "has-background-info";
+
+            case "is-link":
+                return "has-background-link";
+
+            case "is-light":
+                return "has-background-light";
+
+            case "is-dark":
+                return "has-background-dark";
+
+            case "is-black":
+                return "has-background-black";
+
+            default:
+                return "";
+        }
+    }
+
+    string GetSelectedColor(string color)
+    {
+        switch (color) 
+        {
+            case "has-background-primary":
+                return "is-primary";
+
+            case "has-background-success":
+                return "is-success";
+
+            case "has-background-warning":
+                return "is-warning";
+
+            case "has-background-danger":
+                return "is-danger";
+
+            case "has-background-info":
+                return "is-info";
+
+            case "has-background-link":
+                return "is-link";
+
+            case "has-background-light":
+                return "is-light";
+
+            case "has-background-dark":
+                return "is-dark";
+
+            case "has-background-black":
+                return "is-black";
+
+            default:
+                return "";
+        }
+    }
+
+}

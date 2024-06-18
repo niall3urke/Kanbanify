@@ -1,0 +1,101 @@
+﻿@inject DatabaseOperations db
+
+<div class="task">
+    @if (!Editing)
+    {
+        <input @onclick="() => OnCompletedChange(Task)" type="checkbox" checked="@Task.IsCompleted" />
+        <span @onclick="() => OnEdit(Task)" style="text-decoration:
+                          @(Task.IsCompleted ? "line-through" : "")">
+            @Task.Description
+        </span>
+    }
+
+    @if (Editing)
+    {
+        <div class="task-edit">
+            <textarea @bind="Description" onfocus="this.select();">@Description</textarea>
+
+            <button @onclick="() => OnSave(Task)" class="button is-primary">
+                <span>Save</span>
+            </button>
+
+            <button @onclick="() => OnClose(Task)" class="button is-white">
+                <span>Close</span>
+            </button>
+
+            <button @onclick="() => OnArchive(Task)" class="button is-danger is-pulled-right">
+                <span class="icon is-small">
+                    <i class="fas fa-trash"></i>
+                </span>
+            </button>
+        </div>
+    }
+
+</div>
+
+@code {
+
+    // Parameters
+
+    [Parameter]
+    public EventCallback<TaskModel> StateChanged { get; set; }
+
+    [Parameter]
+    public TaskModel Task { get; set; }
+
+    // Properties
+
+    public string Description { get; set; }
+
+    public bool Editing { get; set; }
+
+    // Handlers
+
+    async void OnCompletedChange(TaskModel task)
+    {
+        task.IsCompleted = !task.IsCompleted;
+        Editing = false;
+
+        if (await db.Update(task))
+        {
+            await StateChanged.InvokeAsync(task);
+        }
+    }
+
+    async void OnSave(TaskModel task)
+    {
+        task.Description = Description;
+        Editing = false;
+
+        if (await db.Update(task))
+        {
+            await StateChanged.InvokeAsync(task);
+        }
+    }
+
+    async void OnEdit(TaskModel task)
+    {
+        Description = task.Description;
+        Editing = true;
+
+        await StateChanged.InvokeAsync(task);
+    }
+    
+    async void OnClose(TaskModel task)
+    {
+        Editing = false;
+        await StateChanged.InvokeAsync(task);
+    }
+
+    async void OnArchive(TaskModel task)
+    {
+        task.IsArchived = true;
+        Editing = false;
+
+        if (await db.Update(task))
+        {
+            await StateChanged.InvokeAsync(task);
+        }
+    }
+
+}

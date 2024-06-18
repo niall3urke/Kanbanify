@@ -1,0 +1,255 @@
+﻿@inject DatabaseOperations db
+
+
+    <div class="level">
+        <div class="level-left">
+            <label class="label">Tasks</label>
+        </div>
+        <div class="level-right">
+            <button @onclick="OnHideCompletedClick" class="button is-light">@HideText</button>
+        </div>
+    </div>
+
+    <div class="control">
+
+        @if (TaskModels.Count > 0)
+        {
+            <div class="task-progress">
+                <p class="has-text-grey is-size-7 has-text-weight-bold is-pulled-left" style="margin: 0 5px">
+                    @($"{progress}%")
+                </p>
+                <progress class="progress is-primary" style="width: auto" value="@progress" max="100" />
+            </div>
+        }
+
+        <div class="field">
+            @foreach (var task in TaskModels)
+            {
+                @if(HideCompletedTasks && task.IsCompleted)
+                {
+                    continue;
+                }
+                <ItemTask Task="task" StateChanged="() => Update()" />
+            }
+
+            <div class="new-task">
+                <button class="button is-light" @onclick="OnAddNewTaskClick" style="display: @(!addingTask? "block" : "none");)">
+                    Add a task
+                </button>
+                <div class="new-task-edit" style="display: @(addingTask ? "block" : "none")">
+                    <textarea placeholder="Add a task" @bind="newTaskDescription"></textarea>
+
+                    <button @onclick="OnSaveNewTaskClick" class="button is-primary">
+                        <span>Save</span>
+                    </button>
+
+                    <button @onclick="OnClose" class="button is-white">
+                        <span>Close</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+@code {
+
+    // Parameters
+
+    [Parameter]
+    public ItemModel ItemModel { get; set; }
+
+    public List<ItemTask> ItemTaskViews { get; set; }
+
+    // Properties
+
+    public List<TaskModel> TaskModels { get; set; }
+
+    public bool HideCompletedTasks { get; set; }
+
+    public string HideText { get; set; } = "Hide Completed";
+
+    // Fields
+
+    private string newTaskDescription;
+
+    private string taskDescription;
+
+    private double progress;
+
+    private bool addingTask;
+
+    // Events
+
+    protected override void OnInitialized()
+    {
+        TaskModels = new List<TaskModel>();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await GetTasks();
+        UpdateProgress();
+
+        StateHasChanged();
+    }
+
+    // Methods - setup
+
+    private async Task GetTasks()
+    {
+        if (ItemModel == null)
+            return;
+
+        foreach (var id in ItemModel.TaskIds)
+        {
+            var (success, task) = await db.Read<TaskModel>(id);
+
+            if (!success)
+                continue;
+
+            if (task.IsArchived)
+                continue;
+
+            if (task.IsCompleted && HideCompletedTasks)
+                continue;
+
+            TaskModels.Add(task);
+        }
+    }
+
+    // Handlers
+
+    void OnHideCompletedClick()
+    {
+        HideCompletedTasks = !HideCompletedTasks;
+
+        if (HideCompletedTasks)
+            HideText = "Show Completed";
+        else
+            HideText = "Hide Completed";
+
+        StateHasChanged();
+    }
+
+    async void OnCompletedChange(TaskModel task)
+    {
+        task.IsCompleted = !task.IsCompleted;
+
+        if (await db.Update(task))
+        {
+
+            task.Editing = false;
+            UpdateProgress();
+            StateHasChanged();
+        }
+    }
+
+    void OnEdit(TaskModel task)
+    {
+        CloseEditing();
+        taskDescription = task.Description;
+        task.Editing = true;
+        addingTask = false;
+
+        StateHasChanged();
+    }
+
+    async void OnSave(TaskModel task)
+    {
+        task.Description = taskDescription;
+        task.Editing = false;
+
+        if (await db.Update(task))
+        {
+            StateHasChanged();
+        }
+    }
+
+    void OnClose(TaskModel task)
+    {
+        task.Editing = false;
+        StateHasChanged();
+    }
+
+    async void OnDelete(TaskModel task)
+    {
+        if (await db.Delete(task))
+        {
+            ItemModel.TaskIds.Remove(task.Id);
+
+            if (await db.Update(ItemModel))
+            {
+                TaskModels.Remove(task);
+                StateHasChanged();
+            }
+        }
+    }
+
+    // Handlers - new task
+
+    void OnAddNewTaskClick()
+    {
+        newTaskDescription = "";
+        CloseEditing();
+        addingTask = true;
+    }
+
+    async void OnSaveNewTaskClick()
+    {
+        addingTask = false;
+
+        var task = new TaskModel()
+        {
+            Description = newTaskDescription
+        };
+
+        TaskModels.Add(task);
+
+        if (await db.Create(task))
+        {
+            ItemModel.TaskIds.Add(task.Id);
+            await db.Update(ItemModel);
+        }
+    }
+
+    void OnClose()
+    {
+        addingTask = false;
+    }
+
+    // Methods
+
+    void Update()
+    {
+        UpdateProgress();
+        StateHasChanged();
+    }
+
+    void UpdateProgress()
+    {
+        if (TaskModels.Count() == 0)
+        {
+            progress = 0;
+        }
+        else
+        {
+            double complete = TaskModels.Count(x => x.IsCompleted);
+            progress = Math.Round(complete / TaskModels.Count() * 100, 0);
+        }
+    }
+
+    void CloseEditing()
+    {
+        foreach (var tm in TaskModels)
+        {
+            tm.Editing = false;
+        }
+    }
+
+
+
+}

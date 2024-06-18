@@ -1,0 +1,197 @@
+﻿@inject DatabaseOperations db
+
+<div class="box draggable @ItemModel.BackgroundColor" draggable="true" @ondragstart="@(() => ViewModel.SelectedItem = ItemModel)">
+    <div class="box-header">
+        <div @onclick="() => ViewModel.OnItemClick(ItemModel)" class="box-header-title">
+            @if (ItemModel.IsCompleted)
+            {
+                <span class="icon">
+                    <i class="fa fa-check-circle has-text-success"></i>
+                </span>
+            }
+            <p class="has-text-weight-bold">
+                @ItemModel.Name
+            </p>
+        </div>
+        <div class="box-header-button">
+            <div class="dropdown is-hoverable">
+                <div class="dropdown-trigger">
+                    <span class="icon">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </span>
+                </div>
+                <div class="dropdown-menu">
+                    <div class="dropdown-content">
+                        <a @onclick="() => ViewModel.OnMoveItemClick(ItemModel)" class="dropdown-item">
+                            Move item
+                        </a>
+                        <a @onclick="() => ViewModel.OnCopyItemClick(ItemModel)" class="dropdown-item">
+                            Copy item
+                        </a>
+                        <a @onclick="() => ViewModel.OnArchiveItemClick(ItemModel)" class="dropdown-item">
+                            Archive item
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="level">
+        <div class="level-left">
+            @if (ItemModel.Frequency != ItemFrequency.None)
+            {
+                <div class="level-item">
+                    <span class="tag @FrequencyBackground()">
+                        <span class="icon is-small">
+                            <i class="fa fa-redo"></i>
+                        </span>
+                    </span>
+                </div>
+            }
+            @if (ItemModel.HasDueDate)
+            {
+                <div class="level-item">
+                    <span class="tag @DueBackground()">
+                        <span class="icon is-small is-left">
+                            <i class="far fa-clock"></i>
+                        </span>
+                        <time class="is-size-7" datetime="@ItemModel.DateDue.ToString()">
+                            @(string.Format("{0:d, MMM}", ItemModel.DateDue))
+                        </time>
+                    </span>
+                </div>
+            }
+            @if (ItemModel.Priority != ItemPriority.None)
+            {
+                <div class="level-item">
+                    <span class="tag @PriorityBackground()">
+                        @ItemModel.Priority
+                    </span>
+                </div>
+            }
+        </div>
+        @if (TaskModels.Count > 0)
+        {
+            <div class="level-right">
+                <span class="tag @TasksBackground()">
+                    <span class="icon is-small is-left">
+                        <i class="fa fa-check"></i>
+                    </span>
+                    <span class="is-size-7">
+                        @($"{TaskModels.Count(x => x.IsCompleted)}/{TaskModels.Count}")
+                    </span>
+                </span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+
+    // Cascades
+
+    [CascadingParameter] public ProjectViewModel ViewModel { get; set; }
+
+    // Parameters 
+
+    [Parameter] public ItemModel ItemModel { get; set; }
+
+    // Properties
+
+    public List<TaskModel> TaskModels { get; set; }
+
+    // Events
+
+    protected override void OnInitialized()
+    {
+        TaskModels = new List<TaskModel>();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await GetTasks();
+        StateHasChanged();
+    }
+
+    // Methods - setup
+
+    private async Task GetTasks()
+    {
+        foreach (var id in ItemModel.TaskIds)
+        {
+            var (success, model) = await db.Read<TaskModel>(id);
+
+            if (!success)
+                continue;
+
+            if (model.IsArchived)
+                continue;
+
+            TaskModels.Add(model);
+        }
+    }
+
+    // Methods
+
+    string FrequencyBackground()
+    {
+        if (ItemModel.IsCompleted)
+            return "";
+
+        if (ItemModel.Frequency == ItemFrequency.Daily)
+            return "is-success";
+
+        if (ItemModel.Frequency == ItemFrequency.Weekly)
+            return "is-warning";
+
+        return "is-danger";
+    }
+
+    string PriorityBackground()
+    {
+        if (ItemModel.IsCompleted)
+            return "";
+
+        if (ItemModel.Priority == ItemPriority.Medium)
+            return "is-warning";
+
+        if (ItemModel.Priority == ItemPriority.High)
+            return "is-danger";
+
+        return "is-success";
+    }
+
+    string DueBackground()
+    {
+        if (ItemModel.IsCompleted)
+            return "";
+
+        var ts = ItemModel.DateDue - DateTime.Today;
+
+        if (ts.TotalDays < 2)
+            return "is-danger";
+
+        if (ts.TotalDays < 3)
+            return "is-warning";
+
+        return "";
+    }
+
+    string TasksBackground()
+    {
+        if (ItemModel.IsCompleted)
+            return "";
+
+        if (TaskModels.All(x => x.IsCompleted))
+            return "is-success";
+
+        return "";
+    }
+
+
+
+}

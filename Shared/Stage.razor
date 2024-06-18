@@ -1,0 +1,106 @@
+﻿@inject DatabaseOperations db
+@inject ModalService ms;
+
+<div class="column">
+    <div class="box @StageModel.BackgroundColor" ondragover="event.preventDefault();" @ondrop="() => ViewModel.OnItemStageChange(StageModel)">
+        <div class="box-header">
+            <div class="box-header-title">
+                @if (StageModel.IsCompletedStage)
+                {
+                    <span class="icon">
+                        <i class="fa fa-check"></i>
+                    </span>
+                }
+                <h2 class="has-text-weight-semibold is-size-4">@StageModel.Name</h2>
+                @if (StageModel.ItemLimit > 0)
+                {
+                    string style = "is-success is-light";
+                    if (numItems > StageModel.ItemLimit)
+                    {
+                        style = "is-danger";
+                    }
+                    <span class="tag @style">
+                        @numItems/@StageModel.ItemLimit
+                    </span>
+                }
+            </div>
+            <div class="box-header-button">
+                <div class="dropdown is-hoverable">
+                    <div class="dropdown-trigger">
+                        <span class="icon">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </span>
+                    </div>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-content">
+                            <a @onclick="() => ViewModel.OnMarkAsCompletionStageClick(StageModel)" class="dropdown-item">
+                                Mark as completion stage
+                            </a>
+                            <hr class="dropdown-divider" />
+                            <a @onclick="() => ViewModel.OnMoveStageClick(StageModel)" class="dropdown-item">
+                                Move...
+                            </a>
+                            <a @onclick="() => ViewModel.OnCopyStageClick(StageModel)" class="dropdown-item">
+                                Copy
+                            </a>
+                            <a @onclick="() => ViewModel.OnEditStageClick(StageModel)" class="dropdown-item">
+                                Edit
+                            </a>
+                            <hr class="dropdown-divider" />
+                            <a class="dropdown-item">
+                                Move all items in this stage
+                            </a>
+                            <a @onclick="() => ViewModel.OnArchiveAllCardsInStageClick(StageModel)" class="dropdown-item">
+                                Archive all items in this stage
+                            </a>
+                            <hr class="dropdown-divider" />
+                            <a @onclick="() => ViewModel.OnArchiveStageClick(StageModel)" class="dropdown-item">
+                                Archive this stage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        @foreach (var item in ViewModel.ItemModels.Where(x => x.StageId == StageModel.Id).ToList())
+        {
+        <CascadingValue Value="ViewModel">
+            <Item ItemModel="item" />
+        </CascadingValue>
+        }
+
+        <button @onclick="() => ViewModel.OnAddItemClick(StageModel.Id)" class="button is-light is-fullwidth">Add item</button>
+    </div>
+</div>
+
+@code {
+
+    // Cascades
+
+    [CascadingParameter]
+    public IProjectViewModel ViewModel { get; set; }
+
+    // Parameters
+
+    [Parameter]
+    public StageModel StageModel { get; set; }
+
+    // Fields
+
+    private int numItems;
+        
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        numItems = ViewModel.ItemModels
+            .Count(x => x.StageId == StageModel.Id);
+
+        ViewModel.StateHasChanged();
+    }
+
+
+}

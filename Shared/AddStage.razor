@@ -1,0 +1,200 @@
+﻿@inject ModalService Modal
+@inject DatabaseOperations db
+
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">Add Stage</p>
+        <button @onclick="Cancel" class="delete" aria-label="close"></button>
+    </header>
+
+    <section class="modal-card-body">
+        <div class="field">
+            <label class="label">Title</label>
+            <div class="control">
+                <input @bind="StageModel.Name" class="input" type="text" placeholder="Title">
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Highlight</label>
+            <div class="control">
+                <div class="buttons">
+                    @foreach (var color in colors)
+                    {
+                        if (color == selectedColor)
+                        {
+                            <button @onclick="() => OnColorClick(color)" class="button @color is-circle">
+                                <span class="has-icon">
+                                    <i class="fa fa-check"></i>
+                                </span>
+                            </button>
+                        }
+                        else
+                        {
+                            <button @onclick="() => OnColorClick(color)" class="button @color is-circle"></button>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Item Limit</label>
+            <div class="control">
+                <input @bind="StageModel.ItemLimit" class="input" type="number" placeholder="0" style="max-width: 80px;">
+            </div>
+            <p class="help">
+                Limit the number of items to be placed in this stage
+            </p>
+        </div>
+
+
+        <div class="field">
+            <div class="control">
+                <label class="checkbox">
+                    <input @bind="StageModel.IsCompletedStage" type="checkbox">
+                    This is a completion stage for items
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <footer class="modal-card-foot is-right">
+        <div class="field is-grouped">
+            <p class="control">
+                <button @onclick="Cancel" class="button">Cancel</button>
+            </p>
+            <p class="control">
+                <button @onclick="Save" class="button is-link">Save</button>
+            </p>
+        </div>
+    </footer>
+
+</div>
+
+@code {
+
+    // Cascades
+
+    [CascadingParameter] ModalParameters Parameters { get; set; }
+
+    // Fields
+
+    private StageModel StageModel;
+
+    private string[] colors = new string[]
+    {
+        "", "is-primary", "is-success", "is-warning",
+        "is-danger", "is-info", "is-link",
+        "is-light", "is-dark", "is-black"
+    };
+
+    string selectedColor = "";
+
+    // Events
+
+    protected override void OnInitialized()
+    {
+        StageModel = new StageModel();
+
+        if (Parameters.TryGet<StageModel>("Model", out StageModel model))
+        {
+            StageModel = model;
+            selectedColor = GetSelectedColor(model.BackgroundColor);
+        }
+    }
+
+    void OnColorClick(string color)
+    {
+        StageModel.BackgroundColor = GetBackgroundColor(color);
+        selectedColor = color;
+
+        StateHasChanged();
+    }
+
+    void Save()
+    {
+        Modal.Close(ModalResult.OK<StageModel>(StageModel));
+    }
+
+    void Cancel()
+    {
+        Modal.Close(ModalResult.Cancel());
+    }
+
+    // Methods
+
+    string GetBackgroundColor(string color)
+    {
+        switch (color)
+        {
+            case "is-primary":
+                return "has-background-primary";
+
+            case "is-success":
+                return "has-background-success";
+
+            case "is-warning":
+                return "has-background-warning";
+
+            case "is-danger":
+                return "has-background-danger";
+
+            case "is-info":
+                return "has-background-info";
+
+            case "is-link":
+                return "has-background-link";
+
+            case "is-light":
+                return "has-background-light";
+
+            case "is-dark":
+                return "has-background-dark";
+
+            case "is-black":
+                return "has-background-black";
+
+            default:
+                return "";
+        }
+    }
+
+    string GetSelectedColor(string color)
+    {
+        switch (color) 
+        {
+            case "has-background-primary":
+                return "is-primary";
+
+            case "has-background-success":
+                return "is-success";
+
+            case "has-background-warning":
+                return "is-warning";
+
+            case "has-background-danger":
+                return "is-danger";
+
+            case "has-background-info":
+                return "is-info";
+
+            case "has-background-link":
+                return "is-link";
+
+            case "has-background-light":
+                return "is-light";
+
+            case "has-background-dark":
+                return "is-dark";
+
+            case "has-background-black":
+                return "is-black";
+
+            default:
+                return "";
+        }
+    }
+
+
+}

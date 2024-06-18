@@ -1,0 +1,8 @@
+﻿<div class="modal @(Visible ? "is-active": "")">
+    <div @onclick="OnClickBackground" class="modal-background"></div>
+    <div class="modal-content">
+        <CascadingValue Value="Parameters">
+            @Content
+        </CascadingValue>
+    </div>
+</div>

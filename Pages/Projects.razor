@@ -1,0 +1,213 @@
+﻿@page "/projects"
+@page "/projects/{id:guid}"
+
+@inject NavigationManager Navigation
+@inject DatabaseOperations  db
+@inject ModalService  ms
+
+<nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item" href="/">
+            <h1 class="title is-size-4 has-text-white">
+                Kanbanify
+            </h1>
+        </a>
+
+        <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+    </div>
+
+    <div id="navbarBasicExample" class="navbar-menu">
+        <div class="navbar-start">
+
+        </div>
+
+        <div class="navbar-end">
+            <div class="navbar-item">
+                <div class="buttons">
+                    <a @onclick="OnClickAddProject" class="button is-primary">
+                        <strong>Add Project</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="section">
+    <div class="container">
+
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <span class="icon is-small">
+                        <i class="far fa-clock"></i>
+                    </span>
+                </div>
+                <div class="level-item">
+                    <h3 class="is-size-4">Recent</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="boards">
+            @foreach (var project in ProjectModels)
+            {
+             <div class="board box has-background-primary">
+                 <div class="box-header has-text-white">
+                     <div class="box-header-title">
+                         <h3 class="is-size-5" @onclick="() => OnClickProject(project.Id)">
+                             @project.Name
+                         </h3>
+                     </div>
+                     <div class="box-header-button">
+                         <div class="dropdown is-hoverable">
+                             <div class="dropdown-trigger">
+                                 <span class="icon">
+                                     <i class="fas fa-ellipsis-v"></i>
+                                 </span>
+                             </div>
+                             <div class="dropdown-menu">
+                                 <div class="dropdown-content">
+                                     <a @onclick="OnIconClick" class="dropdown-item">
+                                         <span class="icon is-small">
+                                             <i class="fas fa-archive"></i>
+                                         </span>
+                                         Delete
+                                     </a>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+            }
+        </div>
+    </div>
+
+        
+</div>
+
+<Modal />
+
+
+@code {
+
+    private bool isActive;
+
+    // Parameters
+
+    [Parameter] public Guid Id { get; set; }
+
+    // Properties
+
+    public List<ProjectModel> ProjectModels { get; set; }
+
+    public UserModel Model { get; set; }
+
+    // Events
+
+    protected override void OnInitialized()
+    {
+        ProjectModels = new List<ProjectModel>();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await GetUser();
+        await GetProjects();
+    }
+
+    // Methods - setup
+
+    private async Task GetUser()
+    {
+        var (success, model) = await db.Read<UserModel>(Id);
+
+        if (success)
+        {
+            Model = model;
+        }
+    }
+
+    private async Task GetProjects()
+    {
+        if (Model == null)
+            return;
+
+        foreach (var id in Model.ProjectIds)
+        {
+            var (success, model) = await db.Read<ProjectModel>(id);
+
+            if (success)
+            {
+                ProjectModels.Add(model);
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    // Handlers
+
+    void OnIconClick()
+    {
+        isActive = !isActive;
+    }
+
+    void OnClickAddProject()
+    {
+        if (Model == null)
+            return;
+
+        AddProjectModal();
+    }
+
+    void OnClickProject(Guid id)
+    {
+        Navigation.NavigateTo($"/projects/project/{id}");
+    }
+
+    async void OnClickDeleteProject(Guid id)
+    {
+        var (success, project) = await db.Read<ProjectModel>(id);
+
+        if (success)
+        {
+            await db.Delete(project);
+        }
+    }
+
+    // Methods - modal
+
+    void AddProjectModal()
+    {
+        ms.OnClose += AddProject_ModalClosed;
+        ms.Show<AddProject>();
+    }
+
+    async void AddProject_ModalClosed(ModalResult result)
+    {
+        ms.OnClose -= AddProject_ModalClosed;
+
+        if (result.Success)
+        {
+            var project = (ProjectModel)result.Data;
+            Model.ProjectIds.Add(project.Id);
+            ProjectModels.Add(project);
+
+            await db.Create(project);
+            await db.Update(Model);
+
+            Navigation.NavigateTo($"/projects/project/{project.Id}");
+        }
+    }
+
+
+}
