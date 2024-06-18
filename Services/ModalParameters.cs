@@ -10,7 +10,7 @@ namespace Kanbanify.Services
 
         // Fields
 
-        private Dictionary<string, object> parameters;
+        private readonly Dictionary<string, object> parameters;
 
         // Constructors
 

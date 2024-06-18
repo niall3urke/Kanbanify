@@ -60,7 +60,7 @@ namespace Kanbanify.ViewModels
 
         private readonly ModalService ms;
 
-        private Guid projectId;
+        private readonly Guid projectId;
 
         // ===================
         // ===== Constructors
@@ -152,22 +152,6 @@ namespace Kanbanify.ViewModels
 
                     Tasks.Add(task);
                 }
-            }
-        }
-
-        private async void GetRecords<T>(List<Guid> ids, List<T> values) where T : IStateProperties
-        {
-            foreach (var id in ids)
-            {
-                var (success, value) = await db.Read<T>(id);
-
-                if (!success)
-                    continue;
-
-                if (value.IsArchived)
-                    continue;
-
-                values.Add(value);
             }
         }
 

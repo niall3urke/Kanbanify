@@ -272,7 +272,7 @@ namespace Kanbanify.Services
 
         // Methods - private
 
-        private string GetTableName(Type t)
+        private static string GetTableName(Type t)
         {
             if (t == typeof(ItemModel))
                 return ItemsTable;

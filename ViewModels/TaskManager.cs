@@ -69,13 +69,6 @@ namespace Kanbanify.ViewModels
             }
         }
 
-        // ======================
-        // ===== Private methods
-        // ======================
-
-        private void Update() =>
-            StateHasChanged?.Invoke();
-
         #region Archiving tasks
 
         private async void ArchiveTask(TaskModel task)

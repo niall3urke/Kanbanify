@@ -109,7 +109,7 @@ namespace Kanbanify.ViewModels
 
         private readonly ModalService ms;
 
-        private Guid projectId;
+        private readonly Guid projectId;
 
         // Constructors 
 

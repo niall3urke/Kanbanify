@@ -28,13 +28,13 @@ namespace Kanbanify.Services
         // Methods
 
         public static ModalResult OK<T>(T result) =>
-            new ModalResult(result, typeof(T), true);
+            new(result, typeof(T), true);
 
         public static ModalResult OK() =>
-            new ModalResult(default, typeof(object), true);
+            new(default, typeof(object), true);
 
         public static ModalResult Cancel() =>
-            new ModalResult(default, typeof(object), false);
+            new(default, typeof(object), false);
 
 
     }
